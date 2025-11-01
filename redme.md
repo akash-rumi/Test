@@ -1,0 +1,1 @@
+Run the setup.sh file intialize the project.
