@@ -1,23 +1,22 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\EventController;
-use App\Http\Controllers\TicketController;
-use App\Http\Controllers\BookingController;
+use App\Http\Api\Controllers\AuthController;
+use App\Http\Api\Controllers\EventController;
+use App\Http\Api\Controllers\TicketController;
+use App\Http\Api\Controllers\BookingController;
 
 // --- User/Auth APIs ---
 Route::post('register', [AuthController::class, 'register']); // POST /api/register
 Route::post('login', [AuthController::class, 'login']);     // POST /api/login
 
+Route::get('events', [EventController::class, 'index']); // GET /api/events 
+Route::get('events/{id}', [EventController::class, 'show']); // GET /api/events/{id}
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']); // POST /api/logout
     Route::get('me', [AuthController::class, 'me']);         // GET /api/me
 
-    // --- Event APIs (Public Read/Admin/Organizer Write) ---
-    // Public Read (no middleware here for index/show, but we'll add search/filter in Section 3)
-    Route::get('events', [EventController::class, 'index']); // GET /api/events 
-    Route::get('events/{id}', [EventController::class, 'show']); // GET /api/events/{id}
 
     // Write access controlled by 'admin' OR 'organizer' role
     Route::middleware('role:admin,organizer')->group(function () {
