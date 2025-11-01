@@ -15,27 +15,32 @@ class EventController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Event::query();
-
-        // 1. Search by title (Using scope from Section 4: CommonQueryScopes)
-        if ($request->has('search')) {
-            $query->searchByTitle($request->input('search')); // Using trait scope 
-        }
-
-        // 2. Filter by date (Using scope from Section 4: CommonQueryScopes)
-        if ($request->has('date')) {
-            $query->filterByDate($request->input('date')); // Using trait scope
-        }
+        // Create a unique cache key based on all request parameters
+        $cacheKey = 'events_list_' . sha1(json_encode($request->query()));
         
-        // 3. Filter by location
-        if ($request->has('location')) {
-            $query->where('location', $request->input('location'));
-        }
+        $perPage = $request->get('per_page', 10);
+        $ttl = 60 * 5; // Cache time-to-live: 5 minutes
 
-        // 4. Pagination
-        $events = $query->paginate($request->get('per_page', 10));
+        // Retrieve from cache or execute query
+        $events = Cache::remember($cacheKey, $ttl, function () use ($request, $perPage) {
+            $query = Event::query();
 
-        // Use a Resource to standardize the output structure
+            // Apply filtering/searching logic (from Section 4)
+            if ($request->has('search')) {
+                $query->searchByTitle($request->input('search'));
+            }
+            if ($request->has('date')) {
+                $query->filterByDate($request->input('date'));
+            }
+            if ($request->has('location')) {
+                $query->where('location', $request->input('location'));
+            }
+
+            // Return the paginated collection
+            return $query->paginate($perPage);
+        });
+
+        // The paginator object is now retrieved from the cache (or generated and cached)
         return EventResource::collection($events);
     }
 
